@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>입금 계좌 안내</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="pay-page">
+  <main class="pay-card">
+    <h1>입금 계좌 안내</h1>
+    <p class="pay-subtitle">아래 계좌번호를 복사해 사용 중인 은행 앱에서 입금해 주세요.</p>
+
+    <section id="pay-content" class="pay-content" hidden>
+      <p class="pay-label">은행</p>
+      <p id="pay-bank" class="pay-value"></p>
+
+      <p class="pay-label">계좌번호</p>
+      <p id="pay-account" class="pay-value pay-account-number"></p>
+
+      <p class="pay-label">예금주</p>
+      <p id="pay-holder" class="pay-value"></p>
+
+      <div id="pay-amount-row">
+        <p class="pay-label">금액</p>
+        <p id="pay-amount" class="pay-value"></p>
+      </div>
+
+      <div id="pay-memo-row">
+        <p class="pay-label">메모</p>
+        <p id="pay-memo" class="pay-value"></p>
+      </div>
+
+      <div class="pay-actions">
+        <button id="copy-account-btn" type="button">계좌번호 복사</button>
+        <button id="copy-all-btn" type="button">전체 정보 복사</button>
+      </div>
+
+      <p id="copy-status" class="copy-status" aria-live="polite"></p>
+    </section>
+
+    <section id="pay-error" class="pay-error" hidden>
+      <p>계좌 정보를 읽을 수 없습니다.</p>
+      <p>QR 데이터가 손상되었거나 pay.html 주소가 잘못되었을 수 있습니다.</p>
+      <p>QR을 다시 생성해 주세요.</p>
+    </section>
+  </main>
+
+  <script src="./js/pay.js"></script>
+</body>
+</html>
