@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>부스용 계좌 QR 생성기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling/lib/qr-code-styling.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+  <h1>부스용 계좌 QR 생성기</h1>
+
+  <p class="app-lead">
+    계좌번호, 토스 링크, 자유 입력 QR을 생성합니다. 계좌 QR은 정적 pay.html 페이지를 통해 표시되며, 방문자는 계좌번호 복사 버튼을 사용할 수 있습니다.
+  </p>
+
+  <label>QR 유형
+    <select id="qr-mode">
+      <option value="free" selected>자유 입력 / 링크</option>
+      <option value="account">계좌번호</option>
+      <option value="toss">토스 링크</option>
+    </select>
+  </label>
+
+  <p id="mode-help" class="mode-help" aria-live="polite"></p>
+
+  <section id="free-mode-panel" class="mode-panel">
+    <label>자유 입력 / 링크
+      <textarea id="multi-links" aria-describedby="multi-links-error" placeholder="한 줄에 하나씩 링크를 입력하세요"></textarea>
+    </label>
+    <p id="multi-links-error" class="field-error" aria-live="polite"></p>
+  </section>
+
+  <section id="account-mode-panel" class="mode-panel is-hidden">
+    <label>은행명
+      <input id="account-bank" type="text" aria-describedby="account-bank-error" placeholder="예: 카카오뱅크">
+    </label>
+    <p id="account-bank-error" class="field-error" aria-live="polite"></p>
+
+    <label>예금주
+      <input id="account-holder" type="text" aria-describedby="account-holder-error" placeholder="예: 홍길동">
+    </label>
+    <p id="account-holder-error" class="field-error" aria-live="polite"></p>
+
+    <label>계좌번호
+      <input id="account-number" type="text" aria-describedby="account-number-error" placeholder="예: 3333-00-0000000">
+    </label>
+    <p id="account-number-error" class="field-error" aria-live="polite"></p>
+
+    <label>금액 선택 입력
+      <input id="account-amount" type="text" aria-describedby="account-amount-error" placeholder="예: 12,000원">
+    </label>
+    <p id="account-amount-error" class="field-error" aria-live="polite"></p>
+
+    <label>메모 선택 입력
+      <input id="account-memo" type="text" aria-describedby="account-memo-error" placeholder="예: 회지 입금">
+    </label>
+    <p id="account-memo-error" class="field-error" aria-live="polite"></p>
+
+    <label>계좌 안내 페이지 URL
+      <input id="pay-page-url" type="url" aria-describedby="pay-page-url-help pay-page-url-error" placeholder="예: https://varun.tools/pay.html">
+    </label>
+    <p id="pay-page-url-error" class="field-error" aria-live="polite"></p>
+
+    <div class="pay-url-tools" aria-describedby="pay-page-url-help">
+      <button id="fill-default-pay-url-btn" type="button">현재 위치 기준 URL 넣기</button>
+      <button id="test-pay-url-btn" type="button">pay.html 열기 테스트</button>
+      <button id="copy-pay-url-btn" type="button">pay.html URL 복사</button>
+    </div>
+
+    <p id="pay-page-url-help" class="help-text pay-url-help">
+      pay.html, css/style.css, js/pay.js를 실제 공개 사이트에 올린 뒤 그 주소를 입력하세요. 로컬 file:// 주소나 localhost 주소는 휴대폰에서 열 수 없습니다.
+    </p>
+
+    <p id="pay-page-url-status" class="pay-url-status" aria-live="polite"></p>
+  </section>
+
+  <section id="toss-mode-panel" class="mode-panel is-hidden">
+    <label>토스 링크
+      <input id="toss-link" type="url" aria-describedby="toss-link-error" placeholder="예: https://toss.me/yourname">
+    </label>
+    <p id="toss-link-error" class="field-error" aria-live="polite"></p>
+  </section>
+
+  <section id="account-display-preview-card" class="account-display-preview-card is-hidden" aria-labelledby="account-display-preview-title">
+    <h2 id="account-display-preview-title">스캔 후 표시될 계좌 정보</h2>
+    <pre id="account-display-preview"></pre>
+  </section>
+
+  <section class="payload-preview-card" aria-labelledby="payload-preview-title">
+    <div class="payload-preview-header">
+      <h2 id="payload-preview-title">생성될 QR 내용</h2>
+      <button id="copy-payload-btn" type="button">QR 내용 복사</button>
+    </div>
+
+    <textarea
+      id="payload-preview"
+      readonly
+      aria-describedby="payload-preview-help"
+      placeholder="입력값을 작성하면 QR에 들어갈 내용이 여기에 표시됩니다."
+    ></textarea>
+
+    <p id="payload-preview-help" class="help-text">
+      이 내용이 QR 코드 안에 직접 들어갑니다. 계좌번호 모드에서는 정적 안내 페이지 URL이 들어갑니다. QR을 인쇄하기 전에 pay.html 열기 테스트로 사이트 연결을 먼저 확인해 주세요.
+    </p>
+
+    <p id="payload-copy-status" class="copy-status" aria-live="polite"></p>
+  </section>
+
+  <label>도트 모양 선택
+    <select id="dot-style">
+      <option value="square">네모</option>
+      <option value="dots">도트</option>
+      <option value="rounded" selected>둥근 사각형</option>
+      <option value="classy">클래시</option>
+      <option value="classy-rounded">클래시-둥글</option>
+      <option value="extra-rounded">최대 둥글기</option>
+    </select>
+  </label>
+
+  <label>로고 이미지
+    <input type="file" id="logo-input" accept="image/*">
+  </label>
+
+  <label>로고 배경 색상
+    <input type="color" id="logo-bg-color" value="#ffffff">
+  </label>
+
+  <label>QR 출력 크기
+    <select id="qr-size-select">
+      <option value="256">256px - 화면/소형</option>
+      <option value="512" selected>512px - 부스 인쇄 기본</option>
+      <option value="1024">1024px - 고해상도 인쇄</option>
+    </select>
+  </label>
+
+  <label>라벨 표시
+    <select id="label-visibility">
+      <option value="show" selected>표시</option>
+      <option value="hide">숨김</option>
+    </select>
+  </label>
+
+  <p class="help-text print-help">
+    부스 인쇄용으로는 512px 이상을 권장합니다. QR 주변 여백을 자르지 말고, 인쇄 후 실제 휴대폰 카메라로 스캔 테스트해 주세요.
+  </p>
+
+  <label>파일 형식
+    <select id="format-select">
+      <option value="svg">SVG</option>
+      <option value="png" selected>PNG</option>
+    </select>
+  </label>
+
+  <button id="generate-btn">QR 생성</button>
+  <p id="generation-status" class="generation-status" aria-live="polite"></p>
+  <button id="download-btn">ZIP 다운로드</button>
+
+  <section class="scan-check-card" aria-labelledby="scan-check-title">
+    <h2 id="scan-check-title">출력 전 체크</h2>
+    <ol>
+      <li>pay.html 열기 테스트가 성공하는지 확인</li>
+      <li>QR 생성 후 휴대폰 카메라로 스캔</li>
+      <li>계좌번호 복사 버튼이 작동하는지 확인</li>
+      <li>인쇄 시 QR 주변 여백을 자르지 않기</li>
+    </ol>
+  </section>
+
+  <div id="preview"></div>
+
+  <script src="./js/app.js"></script>
+</body>
+</html>
